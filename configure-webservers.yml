@@ -1,0 +1,118 @@
+---
+- name: Basic Server Setup with Additional Tasks
+  hosts: webserver
+  become: yes
+  tasks:
+    # Update apt cache (Debian-based systems)
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    # Install Nginx (Debian-based systems)
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+      when: ansible_os_family == "Debian"
+
+    # Install Apache (RedHat-based systems)
+    - name: Install Apache (for RedHat-based systems)
+      yum:
+        name: httpd
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    # Install Git
+    - name: Install Git
+      apt:
+        name: git
+        state: present
+      when: ansible_os_family == "Debian"
+
+    # Create a new user
+    - name: Create a new user
+      user:
+        name: newuser
+        state: present
+        shell: /bin/bash
+
+    # Create a directory for nginx (web server)
+    - name: Create a directory for nginx
+      file:
+        path: /var/www/html/my_website
+        state: directory
+        mode: '0755'
+
+    # Start and enable Nginx service (Debian)
+    - name: Start and enable Nginx service
+      service:
+        name: nginx
+        state: started
+        enabled: no
+      when: ansible_os_family == "Debian"
+
+    # Start and enable Apache service (RedHat)
+    - name: Start and enable Apache service
+      service:
+        name: httpd
+        state: started
+        enabled: no
+      when: ansible_os_family == "RedHat"
+
+    # Update all packages to the latest version
+    - name: Update all packages
+      apt:
+        upgrade: dist
+      when: ansible_os_family == "Debian"
+
+    # Setup UFW (Uncomplicated Firewall) for a simple rule (Debian)
+    - name: Ensure UFW is installed (Debian-based systems)
+      apt:
+        name: ufw
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Allow HTTP and HTTPS through UFW (Debian-based systems)
+      ufw:
+        rule: allow
+        name: 'Nginx Full'
+      when: ansible_os_family == "Debian"
+
+    # Download a file from the internet
+    - name: Download an example HTML file from the web
+      get_url:
+        url: https://www.example.com/sample.html
+        dest: /var/www/html/sample.html
+
+    # Create a custom Nginx config file (Debian-based systems)
+    - name: Create a custom Nginx configuration
+      copy:
+        dest: /etc/nginx/sites-available/my_site
+        content: |
+          server {
+            listen 80;
+            server_name my_website.com;
+
+            root /var/www/html/my_website;
+            index index.html;
+          }
+      when: ansible_os_family == "Debian"
+
+    # Enable the custom Nginx site (Debian-based systems)
+    - name: Enable custom Nginx site
+      command: nginx -s reload
+      when: ansible_os_family == "Debian"
+
+    # Ensure the system has the latest security patches
+    - name: Ensure the system has the latest security patches
+      apt:
+        name: unattended-upgrades
+        state: present
+      when: ansible_os_family == "Debian"
+
+    # Clean up temporary package files (Debian)
+    - name: Clean up APT cache
+      apt:
+        autoclean: yes
+      when: ansible_os_family == "Debian"
